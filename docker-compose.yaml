@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  fe:
+    image: pierotestaca708/cis-feaws-demo:latest
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BASE_URL=/fe/
+
+  gateway:
+    image: pierotestaca708/cis-gateway-demo:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - STRAPI_BASE_URL=http://cms:1337
+      - ETL_BASE_URL=http://etl:5000
+
+  etl:
+    image: pierotestaca708/cis-etl-demo:latest
+    ports:
+      - "5000:5000"
+
+  cms:
+    image: pierotestaca708/cis-cmsaws-demo:latest
+    ports:
+      - "1337:1337"
+    depends_on:
+      - cloudsql-proxy
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DB_NAME}
+      DATABASE_USERNAME: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DATABASE_SSL: "false"
+      NODE_ENV: production
+
+      JWT_SECRET: ${JWT_SECRET}
+      APP_KEYS: ${APP_KEYS}
+      API_TOKEN_SALT: ${API_TOKEN_SALT}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
+
+    network_mode: "service:cloudsql-proxy"
+
+  cloudsql-proxy:
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+    command:
+      - "--structured-logs"
+      - "--port=5432"
+      - "${CLOUDSQL_INSTANCE}"
+    restart: always
+
+  nginx-proxy:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./rproxy.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - fe
+      - cms
+      - gateway
+      - etl
