@@ -2,7 +2,7 @@ version: "3.8"
 
 networks:
   app-network:
-    driver: bridge
+    external: true
 
 services:
 
@@ -10,6 +10,7 @@ services:
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
     command:
       - "--structured-logs"
+      - "--address=0.0.0.0"
       - "--port=5432"
       - "${CLOUDSQL_INSTANCE}"
     restart: always
@@ -27,7 +28,7 @@ services:
       DATABASE_NAME: ${DB_NAME}
       DATABASE_USERNAME: ${DB_USER}
       DATABASE_PASSWORD: ${DB_PASSWORD}
-      DATABASE_SSL: "false"
+      STRAPI_DATABASE_SSL: "false"
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET}
       APP_KEYS: ${APP_KEYS}
@@ -38,6 +39,8 @@ services:
       - "1337:1337"
     networks:
       - app-network
+    volumes:
+      - ./database.js:/opt/app/config/database.js
 
   fe:
     image: pierotestaca708/cis-feaws-demo:latest
@@ -58,7 +61,6 @@ services:
       ETL_BASE_URL: http://etl:5000
     networks:
       - app-network
-
   etl:
     image: pierotestaca708/cis-etl-demo:latest
     ports:
@@ -69,13 +71,13 @@ services:
   nginx-proxy:
     image: nginx:latest
     ports:
-      - "80:80"
-    volumes:
-      - ./rproxy.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - fe
-      - cms
-      - gateway
-      - etl
-    networks:
-      - app-network
+       - "80:80"
+     volumes:
+       - ./rproxy.conf:/etc/nginx/nginx.conf:ro
+     depends_on:
+       - fe
+       - cms
+       - gateway
+       - etl
+     networks:
+       - app-network
