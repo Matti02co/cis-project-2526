@@ -2,5 +2,6 @@
 ## Università degli Studi di Cagliari
 ### Cocco Mattia 65336
 ---
-This repository was used to deploy WeatherApp on Google Cloud Platform.
+Questa repository contiene i file utilizzati per il deploy di WeatherApp su GCP.
+Maggiori informazioni sulle scelte implementative sono disponibili nel report.
 
